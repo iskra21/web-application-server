@@ -2,11 +2,15 @@ package webserver;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +31,21 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
         	BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        	String line = reader.readLine();
-        	log.debug("First line of input: {}", line);
-        	String[] tokens = line.split(" ");
+        	String[] lines = readAllLines(reader);
+        	if (lines == null) {
+        		return;
+        	}
+        	log.debug("First line of request: {}", lines[0]);
+        	String[] tokens = lines[0].split(" ");
         	log.debug("First token: {}, second token {}", tokens[0], tokens[1]);
-        	
+        	byte[] body = "Hello World".getBytes();
+        	if (tokens[0].equals("GET") && tokens[1].equals("/index.html")) {
+        		log.debug("Reading the index.html file.");
+        		body = Files.readAllBytes(new File(".\\webapp\\index.html").toPath());
+        	}
+
             DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = "Hello World".getBytes();
+            // byte[] body = "Hello World".getBytes();
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
@@ -41,7 +53,20 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
+    private String[] readAllLines(BufferedReader reader) throws IOException {
+		// TODO Auto-generated method stub
+    	List<String> l = new ArrayList<String>();
+    	int i = 0;
+    	String line;
+    	while(!"".equals(line = reader.readLine())) {
+    		log.debug("request[{}]: {}", i++, line);
+    		l.add(line);
+    	}
+    	
+		return (String[]) l.toArray(new String[l.size()]);
+	}
+
+	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
