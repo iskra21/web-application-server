@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -50,7 +53,8 @@ public class RequestHandler extends Thread {
         		body = Files.readAllBytes(new File(".\\webapp\\user\\form.html").toPath());
         	} else if (tokens[0].equals("GET") && ttokens[0].equals("/user/create")) {
         		log.debug("/user/create");
-        		model.User user = parseGET(ttokens[1]); 
+        		model.User user = parseGET(ttokens[1]);
+        		log.debug(user.toString());
         	}
 
             DataOutputStream dos = new DataOutputStream(out);
@@ -62,9 +66,16 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private model.User parseGET(String string) {
+    private model.User parseGET(String string) throws UnsupportedEncodingException {
 		// TODO Auto-generated method stub
-		return null;
+    	String decodedURI = URLDecoder.decode(string, "UTF-8"); 
+    	String[] tokens = decodedURI.split("\\&");
+    	HashMap<String,String> map = new HashMap<String,String>(tokens.length);
+    	for(String token:tokens) {
+    		String[] tokenElements = token.split("\\=");
+    		map.put(tokenElements[0].toLowerCase(), tokenElements[1]);
+    	}
+		return new model.User(map.get("userid"), map.get("password"), map.get("name"), map.get("email"));
 	}
 
 	private String[] readAllLines(BufferedReader reader) throws IOException {
