@@ -15,6 +15,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import model.User;
+
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class.getName());
 
@@ -38,10 +40,17 @@ public class RequestHandler extends Thread {
         	log.debug("First line of request: {}", lines[0]);
         	String[] tokens = lines[0].split(" ");
         	log.debug("First token: {}, second token {}", tokens[0], tokens[1]);
+        	String[] ttokens = tokens[1].split("\\?");
         	byte[] body = "Hello World".getBytes();
         	if (tokens[0].equals("GET") && tokens[1].equals("/index.html")) {
         		log.debug("Reading the index.html file.");
         		body = Files.readAllBytes(new File(".\\webapp\\index.html").toPath());
+        	} else if (tokens[0].equals("GET") && tokens[1].equals("/user/form.html")) {
+        		log.debug("Reading the  file.");
+        		body = Files.readAllBytes(new File(".\\webapp\\user\\form.html").toPath());
+        	} else if (tokens[0].equals("GET") && ttokens[0].equals("/user/create")) {
+        		log.debug("/user/create");
+        		model.User user = parseGET(ttokens[1]); 
         	}
 
             DataOutputStream dos = new DataOutputStream(out);
@@ -53,7 +62,12 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private String[] readAllLines(BufferedReader reader) throws IOException {
+    private model.User parseGET(String string) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private String[] readAllLines(BufferedReader reader) throws IOException {
 		// TODO Auto-generated method stub
     	List<String> l = new ArrayList<String>();
     	int i = 0;
