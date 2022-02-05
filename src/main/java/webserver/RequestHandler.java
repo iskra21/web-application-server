@@ -35,30 +35,27 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-        	BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        	String[] lines = readAllLines(reader);
-        	if (lines == null) {
-        		return;
-        	}
-        	log.debug("First line of request: {}", lines[0]);
-        	String[] tokens = lines[0].split(" ");
-        	log.debug("First token: {}, second token {}", tokens[0], tokens[1]);
-        	String[] ttokens = tokens[1].split("\\?");
+        	// 헤더 구조체를 만든다.
+        	// 헤더를 읽어 온다. URI 3파트, 다음 헤더 :로 분리된 것, body
+        	// URI에 따라 처리할 일을 구분한다. html로 끝나는 것. ico로 끝나는 것. ?이 있으면 CGI
+        	// 첫재줄은 action uri version action은 enum으로 구분하자
+        	// 읽어온다, action과 uri에 따라 할 일을 정한다.
+        	
+        	RequestParser req = new RequestParser(in);
+        	
         	byte[] body = "Hello World".getBytes();
-        	if (tokens[0].equals("GET") && tokens[1].equals("/index.html")) {
-        		log.debug("Reading the index.html file.");
-        		body = Files.readAllBytes(new File(".\\webapp\\index.html").toPath());
-        	} else if (tokens[0].equals("GET") && tokens[1].equals("/user/form.html")) {
-        		log.debug("Reading the  file.");
-        		body = Files.readAllBytes(new File(".\\webapp\\user\\form.html").toPath());
-        	} else if (tokens[0].equals("GET") && ttokens[0].equals("/user/create")) {
-        		log.debug("/user/create");
-        		model.User user = parseGET(ttokens[1]);
+        	
+        	if (isResourceRequest(req)) {
+        		// html 이나 ico 요청, get 이고 / 또는 html 또는 ico로 끝날 때, webapp 어디서 붙일까?
+        		body = getResource(req);
+        	} else if (isCGI(req)) {
+        		// cgi 요청, /user/create 호출 해야 함. 보통 확장자로 구분할듯.
+        		model.User user = doCGI(req);
         		log.debug(user.toString());
         	}
 
             DataOutputStream dos = new DataOutputStream(out);
-            // byte[] body = "Hello World".getBytes();
+            //byte[] body = "Hello World".getBytes();
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
@@ -66,29 +63,72 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private model.User parseGET(String string) throws UnsupportedEncodingException {
+    private model.User doCGI(RequestParser req) throws UnsupportedEncodingException {
+    	String method = req.getMethod();
+    	String uri = req.getUri();
+    	
+    	if ("GET".equals(method)) {
+    		uri = URLDecoder.decode(uri, "UTF-8");
+    		int index = uri.indexOf('?');
+    		uri = uri.substring(index+1);
+    		return parseCGI(uri);
+    	} else if ("POST".equals(method)) {
+    		return parseCGI(req.getContentsBody().toString());
+    	}
+    	
+		return null;
+	}
+
+	private byte[] getResource(RequestParser req) throws IOException {
+    	String uri = req.getUri();
+    	
+    	String prefix = "./webapp";    	
+    	String defaultFile = "index.html";
+    	
+    	uri = uri.endsWith("/") ? prefix + uri + defaultFile : prefix + uri;
+
+    	if (File.separatorChar != '/') uri = uri.replace('/', File.separatorChar);
+
+    	return Files.readAllBytes(new File(uri).toPath());
+	}
+
+	private boolean isCGI(RequestParser req) {
 		// TODO Auto-generated method stub
-    	String decodedURI = URLDecoder.decode(string, "UTF-8"); 
-    	String[] tokens = decodedURI.split("\\&");
+    	String method = req.getMethod();
+    	String uri = req.getUri();
+    	
+    	int index = uri.indexOf('?');
+    	
+    	if (index != -1) {
+    		uri = uri.substring(0, index);
+    	}
+    	
+    	if (method.matches("(GET)|(POST)") && uri.matches("[\\w\\-\\/]*create")) {
+    		return true;
+    	}
+    	
+		return false;
+	}
+
+	private boolean isResourceRequest(RequestParser req) {
+		// TODO Auto-generated method stub
+
+    	if("GET".equals(req.getMethod()) && req.getUri().matches("[\\w\\-\\/]*(\\.html)|\\/")) {
+    		return true;
+    	}
+    	
+		return false;
+	}
+
+	private model.User parseCGI(String cgi) throws UnsupportedEncodingException {
+		// TODO Auto-generated method stub
+    	String[] tokens = cgi.split("\\&");
     	HashMap<String,String> map = new HashMap<String,String>(tokens.length);
     	for(String token:tokens) {
     		String[] tokenElements = token.split("\\=");
     		map.put(tokenElements[0].toLowerCase(), tokenElements[1]);
     	}
 		return new model.User(map.get("userid"), map.get("password"), map.get("name"), map.get("email"));
-	}
-
-	private String[] readAllLines(BufferedReader reader) throws IOException {
-		// TODO Auto-generated method stub
-    	List<String> l = new ArrayList<String>();
-    	int i = 0;
-    	String line;
-    	while(!"".equals(line = reader.readLine())) {
-    		log.debug("request[{}]: {}", i++, line);
-    		l.add(line);
-    	}
-    	
-		return (String[]) l.toArray(new String[l.size()]);
 	}
 
 	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
