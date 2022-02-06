@@ -46,7 +46,8 @@ public class RequestParser {
     	
     	// contents Body 읽기
     	if ("POST".equals(this.action) && this.headers.containsKey("Content-Length")) {
-    		this.contentsBody = IOUtils.readData(br, Integer.getInteger(this.headers.get("Content-Length")));
+    		log.debug("Length: {}", this.headers.get("Content-Length"));
+    		this.contentsBody = IOUtils.readData(br, Integer.parseInt(this.headers.get("Content-Length")));
     	}
 	}
 

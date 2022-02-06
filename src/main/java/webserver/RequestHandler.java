@@ -44,26 +44,40 @@ public class RequestHandler extends Thread {
         	RequestParser req = new RequestParser(in);
         	
         	byte[] body = "Hello World".getBytes();
+            DataOutputStream dos = new DataOutputStream(out);        	
         	
         	if (isResourceRequest(req)) {
         		// html 이나 ico 요청, get 이고 / 또는 html 또는 ico로 끝날 때, webapp 어디서 붙일까?
-        		body = getResource(req);
+        		body = getResource(req.getUri());
+                response200Header(dos, body.length);
+                responseBody(dos, body);        		
         	} else if (isCGI(req)) {
         		// cgi 요청, /user/create 호출 해야 함. 보통 확장자로 구분할듯.
         		model.User user = doCGI(req);
+        		db.DataBase.addUser(user);
         		log.debug(user.toString());
+                response302Header(dos);
+        	} else {
+                response200Header(dos, body.length);
+                responseBody(dos, body);        		
         	}
 
-            DataOutputStream dos = new DataOutputStream(out);
-            //byte[] body = "Hello World".getBytes();
-            response200Header(dos, body.length);
-            responseBody(dos, body);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
 
-    private model.User doCGI(RequestParser req) throws UnsupportedEncodingException {
+    private void response302Header(DataOutputStream dos) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: http://localhost:8080/");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }		
+	}
+
+	private model.User doCGI(RequestParser req) throws UnsupportedEncodingException {
     	String method = req.getMethod();
     	String uri = req.getUri();
     	
@@ -79,9 +93,7 @@ public class RequestHandler extends Thread {
 		return null;
 	}
 
-	private byte[] getResource(RequestParser req) throws IOException {
-    	String uri = req.getUri();
-    	
+	private byte[] getResource(String uri) throws IOException {
     	String prefix = "./webapp";    	
     	String defaultFile = "index.html";
     	
@@ -98,6 +110,8 @@ public class RequestHandler extends Thread {
     	String uri = req.getUri();
     	
     	int index = uri.indexOf('?');
+    	
+    	log.debug("Position of ?: {}", index);
     	
     	if (index != -1) {
     		uri = uri.substring(0, index);
