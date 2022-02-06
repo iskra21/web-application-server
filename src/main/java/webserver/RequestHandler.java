@@ -51,12 +51,15 @@ public class RequestHandler extends Thread {
         		body = getResource(req.getUri());
                 response200Header(dos, body.length);
                 responseBody(dos, body);        		
-        	} else if (isCGI(req)) {
+        	} else if (isRegister(req)) {
         		// cgi 요청, /user/create 호출 해야 함. 보통 확장자로 구분할듯.
-        		model.User user = doCGI(req);
+        		model.User user = doRegister(req);
         		db.DataBase.addUser(user);
         		log.debug(user.toString());
                 response302Header(dos);
+        	} else if (isLogin(req)) {
+        		boolean logined = doLogin(req);
+        		
         	} else {
                 response200Header(dos, body.length);
                 responseBody(dos, body);        		
@@ -77,7 +80,7 @@ public class RequestHandler extends Thread {
         }		
 	}
 
-	private model.User doCGI(RequestParser req) throws UnsupportedEncodingException {
+	private model.User doRegister(RequestParser req) throws UnsupportedEncodingException {
     	String method = req.getMethod();
     	String uri = req.getUri();
     	
@@ -104,7 +107,7 @@ public class RequestHandler extends Thread {
     	return Files.readAllBytes(new File(uri).toPath());
 	}
 
-	private boolean isCGI(RequestParser req) {
+	private boolean isRegister(RequestParser req) {
 		// TODO Auto-generated method stub
     	String method = req.getMethod();
     	String uri = req.getUri();
@@ -117,7 +120,7 @@ public class RequestHandler extends Thread {
     		uri = uri.substring(0, index);
     	}
     	
-    	if (method.matches("(GET)|(POST)") && uri.matches("[\\w\\-\\/]*create")) {
+    	if (method.matches("(GET)|(POST)") && uri.matches("[\\w\\-\\/]*(create)|(login)")) {
     		return true;
     	}
     	
