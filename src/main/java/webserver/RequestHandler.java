@@ -59,6 +59,13 @@ public class RequestHandler extends Thread {
                 response302Header(dos);
         	} else if (isLogin(req)) {
         		boolean logined = doLogin(req);
+        		if (logined) {
+        			log.debug("login successful");
+        			response200LoginOkHeader(dos);
+        		} else {
+        			log.debug("login failed");
+        			response401LoginFailedHeader(dos);
+        		}
         		
         	} else {
                 response200Header(dos, body.length);
@@ -70,10 +77,65 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void response302Header(DataOutputStream dos) {
+    private void response401LoginFailedHeader(DataOutputStream dos) {
         try {
             dos.writeBytes("HTTP/1.1 302 Found \r\n");
-            dos.writeBytes("Location: http://localhost:8080/");
+            dos.writeBytes("Location: /user/login_failed.html\r\n");
+            dos.writeBytes("Set-Cookie: logined=false\r\n");            
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }	
+	}
+
+	private void response200LoginOkHeader(DataOutputStream dos) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: /index.html\r\n");
+            dos.writeBytes("Set-Cookie: logined=true\r\n");            
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }	
+    }
+
+	private boolean doLogin(RequestParser req) throws UnsupportedEncodingException {
+    	String method = req.getMethod();
+    	String uri = req.getUri();
+    	model.User loginUser = null;
+
+    	if ("POST".equals(method)) {
+    		loginUser = parseCGI(req.getContentsBody().toString());
+    	} else if ("GET".equals(method)) {
+    		uri = URLDecoder.decode(uri, "UTF-8");
+    		int index = uri.indexOf('?');
+    		uri = uri.substring(index+1);
+    		loginUser = parseCGI(uri);
+    	}
+    	model.User findUser = db.DataBase.findUserById(loginUser.getUserId());
+    	if ((findUser != null) && findUser.getPassword().equals(loginUser.getPassword())) {
+    		return true;
+    	}
+    	return false;
+	}
+
+	private boolean isLogin(RequestParser req) {
+    	String method = req.getMethod();
+    	String uri = req.getUri();    	
+    	int index = uri.indexOf('?');    	
+    	if (index != -1) {
+    		uri = uri.substring(0, index);
+    	}   	
+    	if (method.matches("(GET)|(POST)") && uri.matches("[\\w\\-\\/]*login")) {
+    		return true;
+    	}
+		return false;
+	}
+
+	private void response302Header(DataOutputStream dos) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: /index.html\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
@@ -120,7 +182,7 @@ public class RequestHandler extends Thread {
     		uri = uri.substring(0, index);
     	}
     	
-    	if (method.matches("(GET)|(POST)") && uri.matches("[\\w\\-\\/]*(create)|(login)")) {
+    	if (method.matches("(GET)|(POST)") && uri.matches("[\\w\\-\\/]*create")) {
     		return true;
     	}
     	
