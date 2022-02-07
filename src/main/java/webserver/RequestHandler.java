@@ -12,11 +12,15 @@ import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Strings;
 
 import model.User;
 
@@ -67,7 +71,16 @@ public class RequestHandler extends Thread {
         			response401LoginFailedHeader(dos);
         		}
         		
-        	} else {
+        	} else if (isList(req)){
+        		if (isLoggined(req)) {
+        			body = doList();
+        			response200Header(dos, body.length);
+        			responseBody(dos, body);
+        		} else {
+        			response302Header(dos);
+        		}
+        	
+            }else {
                 response200Header(dos, body.length);
                 responseBody(dos, body);        		
         	}
@@ -77,7 +90,46 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void response401LoginFailedHeader(DataOutputStream dos) {
+    private byte[] doList() {
+    	Collection<User> users = db.DataBase.findAll();
+    	StringBuilder str = new StringBuilder();
+    	
+    	str.append("ID\tPassword\tName\tE-Mail\n");
+    	for(User user:users) {
+    		str.append(user.getUserId()+"\t"+user.getPassword()+"\t"+user.getName()+"\t"+user.getEmail()+"\n");
+    	}
+    	return str.toString().getBytes();
+	}
+
+	private boolean isLoggined(RequestParser req) {
+    	String value = req.findKey("Cookie");
+    	if (Strings.isNullOrEmpty(value)) {
+    		return false;
+    	}
+    	Map<String,String> cookie = util.HttpRequestUtils.parseCookies(value);
+    	String logginedOrNot = cookie.get("logined");
+    	if (!Strings.isNullOrEmpty(logginedOrNot) && Boolean.parseBoolean(logginedOrNot)) {
+    		return true;
+    	}
+    	return false;
+	}
+
+	private boolean isList(RequestParser req) {
+    	String method = req.getMethod();
+    	String uri = req.getUri();
+    	
+    	int index = uri.indexOf('?');
+    	log.debug("Position of ?: {}", index);
+    	if (index != -1) {
+    		uri = uri.substring(0, index);
+    	}
+    	if (method.matches("(GET)|(POST)") && uri.matches("[\\w\\-\\/]*list")) {
+    		return true;
+    	}
+		return false;
+	}
+
+	private void response401LoginFailedHeader(DataOutputStream dos) {
         try {
             dos.writeBytes("HTTP/1.1 302 Found \r\n");
             dos.writeBytes("Location: /user/login_failed.html\r\n");

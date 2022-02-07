@@ -62,6 +62,10 @@ public class RequestParser {
 	public String getContentsBody() {
 		return this.contentsBody;
 	}
+
+	public String findKey(String string) {
+		return this.headers.get(string);
+	}
 	
 	
 }
