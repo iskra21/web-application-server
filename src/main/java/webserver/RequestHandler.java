@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Strings;
 
 import model.User;
+import util.HttpRequest;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class.getName());
@@ -45,7 +46,7 @@ public class RequestHandler extends Thread {
         	// 첫재줄은 action uri version action은 enum으로 구분하자
         	// 읽어온다, action과 uri에 따라 할 일을 정한다.
         	
-        	RequestParser req = new RequestParser(in);
+        	HttpRequest req = new HttpRequest(in);
         	
         	byte[] body = "Hello World".getBytes();
             DataOutputStream dos = new DataOutputStream(out);        	

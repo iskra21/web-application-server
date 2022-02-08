@@ -57,6 +57,11 @@ public class HttpRequest {
     	}
 	}
 
+    /**
+     * @param getHeader(String Key)
+     *            HTTP 헤더에서 찾을 Key 값을 넘겨 줌
+     * @return Key 값에 매칭되는 value를 리턴함
+     */	
 	public String getHeader(String key) {
 		return this.headers.get(key);
 	}
