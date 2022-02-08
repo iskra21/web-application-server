@@ -12,13 +12,18 @@ import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
+
 import model.User;
+import util.HttpRequest;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class.getName());
@@ -41,7 +46,7 @@ public class RequestHandler extends Thread {
         	// 첫재줄은 action uri version action은 enum으로 구분하자
         	// 읽어온다, action과 uri에 따라 할 일을 정한다.
         	
-        	RequestParser req = new RequestParser(in);
+        	HttpRequest req = new HttpRequest(in);
         	
         	byte[] body = "Hello World".getBytes();
             DataOutputStream dos = new DataOutputStream(out);        	
@@ -50,7 +55,11 @@ public class RequestHandler extends Thread {
         		// html 이나 ico 요청, get 이고 / 또는 html 또는 ico로 끝날 때, webapp 어디서 붙일까?
         		body = getResource(req.getUri());
                 response200Header(dos, body.length);
-                responseBody(dos, body);        		
+                responseBody(dos, body);
+        	} else if (isCSS(req)) {
+        		body = getResource(req.getUri());
+        		response200CSSHeader(dos, body.length);
+        		responseBody(dos, body);
         	} else if (isRegister(req)) {
         		// cgi 요청, /user/create 호출 해야 함. 보통 확장자로 구분할듯.
         		model.User user = doRegister(req);
@@ -67,7 +76,16 @@ public class RequestHandler extends Thread {
         			response401LoginFailedHeader(dos);
         		}
         		
-        	} else {
+        	} else if (isList(req)){
+        		if (isLoggined(req)) {
+        			body = doList();
+        			response200Header(dos, body.length);
+        			responseBody(dos, body);
+        		} else {
+        			response302Header(dos);
+        		}
+        	
+            }else {
                 response200Header(dos, body.length);
                 responseBody(dos, body);        		
         	}
@@ -77,7 +95,64 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void response401LoginFailedHeader(DataOutputStream dos) {
+    private void response200CSSHeader(DataOutputStream dos, int length) {
+        try {
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: text/css\r\n");
+            dos.writeBytes("Content-Length: " + length + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }		
+	}
+
+	private boolean isCSS(RequestParser req) {
+        if("GET".equals(req.getMethod()) && req.getUri().matches("[\\w\\-\\/]*\\.css")) {
+    		return true;
+    	}
+		return false;
+	}
+
+	private byte[] doList() {
+    	Collection<User> users = db.DataBase.findAll();
+    	StringBuilder str = new StringBuilder();
+    	
+    	str.append("ID\tPassword\tName\tE-Mail\r\n");
+    	for(User user:users) {
+    		str.append(user.getUserId()+"\t"+user.getPassword()+"\t"+user.getName()+"\t"+user.getEmail()+"\r\n");
+    	}
+    	return str.toString().getBytes();
+	}
+
+	private boolean isLoggined(RequestParser req) {
+    	String value = req.findKey("Cookie");
+    	if (Strings.isNullOrEmpty(value)) {
+    		return false;
+    	}
+    	Map<String,String> cookie = util.HttpRequestUtils.parseCookies(value);
+    	String logginedOrNot = cookie.get("logined");
+    	if (!Strings.isNullOrEmpty(logginedOrNot) && Boolean.parseBoolean(logginedOrNot)) {
+    		return true;
+    	}
+    	return false;
+	}
+
+	private boolean isList(RequestParser req) {
+    	String method = req.getMethod();
+    	String uri = req.getUri();
+    	
+    	int index = uri.indexOf('?');
+    	log.debug("Position of ?: {}", index);
+    	if (index != -1) {
+    		uri = uri.substring(0, index);
+    	}
+    	if (method.matches("(GET)|(POST)") && uri.matches("[\\w\\-\\/]*list")) {
+    		return true;
+    	}
+		return false;
+	}
+
+	private void response401LoginFailedHeader(DataOutputStream dos) {
         try {
             dos.writeBytes("HTTP/1.1 302 Found \r\n");
             dos.writeBytes("Location: /user/login_failed.html\r\n");
