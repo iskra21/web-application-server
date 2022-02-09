@@ -1,6 +1,7 @@
 package webserver;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -66,6 +67,4 @@ public class RequestParser {
 	public String findKey(String string) {
 		return this.headers.get(string);
 	}
-	
-	
 }
