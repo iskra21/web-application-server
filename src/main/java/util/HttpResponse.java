@@ -32,7 +32,7 @@ public class HttpResponse {
 				addHeader("Content-Type", "text/css");
 			} else if (url.endsWith(".js")) {
 				addHeader("Content-Type", "application/javascript");
-			} else if (url.endsWith(".html")) {
+			} else {
 				addHeader("Content-Type", "text/html;charset=utf-8");
 			}
 			addHeader("Content-Length", body.length+"");
