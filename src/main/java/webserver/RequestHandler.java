@@ -47,9 +47,9 @@ public class RequestHandler extends Thread {
         			body.append("<tr><td>UserId</td><td>Password</td><td>Name</td><td>E-Mail</td></tr>");
         			for (User user:users) {
         				body.append("<tr>");
-        				body.append("<tr>"+user.getUserId()+"</td>");
+        				body.append("<td>"+user.getUserId()+"</td>");
         				body.append("<td>"+user.getPassword()+"</td>");
-        				body.append("td>"+user.getName()+"</td>");
+        				body.append("<td>"+user.getName()+"</td>");
         				body.append("<td>"+user.getEmail()+"</td>");
         				body.append("</tr>");
         			}
@@ -88,7 +88,7 @@ public class RequestHandler extends Thread {
 	}
 
 	private boolean loginCorrect(HttpRequest req) {
-    	User user = DataBase.findUserById(req.getParameter("userId"));	
+    	User user = DataBase.findUserById(req.getParameter("userId"));
     	if ((user != null) && user.getPassword().equals(req.getParameter("password"))) {
     		return true;
     	}
