@@ -89,7 +89,7 @@ public class RequestHandler extends Thread {
 
 	private boolean loginCorrect(HttpRequest req) {
     	User user = DataBase.findUserById(req.getParameter("userId"));	
-    	if ((user != null) && user.getPassword().equals(req.getParameter("Password"))) {
+    	if ((user != null) && user.getPassword().equals(req.getParameter("password"))) {
     		return true;
     	}
     	return false;
