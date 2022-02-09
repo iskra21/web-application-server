@@ -34,6 +34,18 @@ public class RequestHandler extends Thread {
         	HttpRequest req = new HttpRequest(in);
         	HttpResponse res = new HttpResponse(out);
         	String url = req.getUrl();
+        	
+        	Map<String, Controller> controller = new HashMap();
+        	controller.put("/user/create", new CreateUserController());
+        	controller.put("/user/list", new ListUserController());
+        	controller.put("/user/login", new LoginController());
+        	
+        	Controller con = controller.get(req.getUrl());
+        	if (con == null) {
+        		res.forward("./webapp/"+url);
+        	} else {
+        		con.service(req, res);
+        	}
 
         	if ("/user/create".equals(url)) {
         		User user = new User(req.getParameter("userId"), req.getParameter("password"), req.getParameter("name"), req.getParameter("email"));
