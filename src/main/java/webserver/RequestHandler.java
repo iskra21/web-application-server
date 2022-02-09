@@ -22,8 +22,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 
+import db.DataBase;
 import model.User;
 import util.HttpRequest;
+import util.HttpResponse;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class.getName());
@@ -39,17 +41,48 @@ public class RequestHandler extends Thread {
                 connection.getPort());
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
-            // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-        	// 헤더 구조체를 만든다.
-        	// 헤더를 읽어 온다. URI 3파트, 다음 헤더 :로 분리된 것, body
+        	// Http 요청을 처리할 클래스를 만든다.
+        	// Http Request를 읽어 온다. URI 3파트, 다음 헤더 :로 분리된 것, body
         	// URI에 따라 처리할 일을 구분한다. html로 끝나는 것. ico로 끝나는 것. ?이 있으면 CGI
         	// 첫재줄은 action uri version action은 enum으로 구분하자
         	// 읽어온다, action과 uri에 따라 할 일을 정한다.
         	
         	HttpRequest req = new HttpRequest(in);
         	
-        	byte[] body = "Hello World".getBytes();
-            DataOutputStream dos = new DataOutputStream(out);        	
+        	//byte[] body = "Hello World".getBytes();
+            //DataOutputStream dos = new DataOutputStream(out);        	
+        	
+        	String url = req.getUrl();
+        	HttpResponse res = new HttpResponse(out);
+        	
+        	if ("/user/create".equals(url)) {
+        		User user = new User(req.getParameter("userId"), req.getParameter("password"), req.getParameter("name"), req.getParameter("email"));
+        		DataBase.addUser(user);
+        		res.sendRedirect("/index.html");
+        	} else if ("/user/list".equals(url)) {
+        		if (isLoggined(req)) {
+        			StringBuilder body = new StringBuilder();
+        			Collection<User> users = DataBase.findAll();
+        			body.append("...");
+        			for (User user:users) {
+        				body.append(user.getUserId()+user.getPassword()+user.getName()+user.getEmail());
+        			}
+        			body.append("...");
+        			res.forwardBody(body.toString());
+        		} else {
+        			res.sendRedirect("/index.html");
+        		}
+        	} else if ("/user/login".equals(url)) {
+        		if (loginCorrect(req)) {
+        			res.addHeader("Set-Cookie", "logined=true");
+        			res.sendRedirect("/index.html");
+        		} else {
+        			res.addHeader("Set-Cookie", "logined=false");
+        			res.sendRedirect("/user/login_failed.html");
+        		}
+        	} else { // .html;.css;.js 경우
+        		res.forward("./webapp/"+url);
+        	}
         	
         	if (isResourceRequest(req)) {
         		// html 이나 ico 요청, get 이고 / 또는 html 또는 ico로 끝날 때, webapp 어디서 붙일까?
