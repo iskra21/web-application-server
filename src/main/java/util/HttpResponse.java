@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class HttpResponse {
 			} else if (url.endsWith(".html")) {
 				addHeader("Content-Type", "text/html;charset=utf-8");
 			}
+			addHeader("Content-Length", body.length+"");
 			response200Header();
 			responseBody(body);
 		} catch (IOException e) {
@@ -44,6 +46,7 @@ public class HttpResponse {
 	public void forwardBody(String bodyContent) {
 		byte[] body = bodyContent.getBytes();
 		addHeader("Content-Type", "text/html;charset=utf-8");
+		addHeader("Content-Length", body.length+"");
 		response200Header();
 		responseBody(body);
 	}
@@ -74,6 +77,10 @@ public class HttpResponse {
 
     private void processHeaders() {
     	try {
+    		Set<String> keySet = header.keySet();
+    		for (String key:keySet) {
+    			this.dos.writeBytes(key + ": " + header.get(key) + " \r\n");
+    		}
         	this.dos.writeBytes("\r\n");    		
     	} catch (IOException e) {
     		log.error(e.getMessage());
