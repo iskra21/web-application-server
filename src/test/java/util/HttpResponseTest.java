@@ -7,7 +7,7 @@ import java.io.FileOutputStream;
 import org.junit.Test;
 
 public class HttpResponseTest {
-	private String testDirectory = ".\\src\\test\resources\\";
+	private String testDirectory = ".\\src\\test\\resources\\";
 
 	@Test
 	public void responseForward() throws Exception {
