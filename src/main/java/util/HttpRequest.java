@@ -33,21 +33,12 @@ public class HttpRequest {
 		this.method = tokens[0];
 		this.url = tokens[1];
 		this.httpVersion = tokens[2];
-		//log.debug("HTTP Request[0]: Action={}, URI={}, Version={}", this.action, this.uri, this.version);
 		
     	this.headers = new HashMap<String,String>();
     	while(!"".equals(line = reader.readLine())) {
     		HttpRequestUtils.Pair pair = HttpRequestUtils.parseHeader(line);
     		headers.put(pair.getKey(), pair.getValue());
     	}
-    	/* int i = 1, index = 0;
-    	String tmpLine;
-    	while(!"".equals(tmpLine = br.readLine())) {
-    		log.debug("HTTP Request[{}]: {}", i++, tmpLine);
-    		index = tmpLine.indexOf(":");
-    		this.headers.put(tmpLine.substring(0,index), tmpLine.substring(index+1).stripLeading());
-    	}
-    	log.debug(this.headers.toString()); */
     	
     	// 본문 읽기
     	int index = url.indexOf('?');

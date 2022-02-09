@@ -1,7 +1,5 @@
 package util;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -26,7 +24,7 @@ public class HttpResponseTest {
 	@Test
 	public void responseCookies() throws Exception {
 		HttpResponse response = new HttpResponse(createOutputStream("Http_Cookies.txt"));
-		response.addHeader("Set-Cookie", "logined=true")
+		response.addHeader("Set-Cookie", "logined=true");
 		response.sendRedirect("/index.html");
 	}
 
