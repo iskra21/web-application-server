@@ -35,7 +35,7 @@ public class HttpResponse {
 			} else {
 				addHeader("Content-Type", "text/html;charset=utf-8");
 			}
-			addHeader("Content-Length", body.length+"");
+			addHeader("Content-Length", Integer.toString(body.length));
 			response200Header();
 			responseBody(body);
 		} catch (IOException e) {
@@ -46,7 +46,7 @@ public class HttpResponse {
 	public void forwardBody(String bodyContent) {
 		byte[] body = bodyContent.getBytes();
 		addHeader("Content-Type", "text/html;charset=utf-8");
-		addHeader("Content-Length", body.length+"");
+		addHeader("Content-Length", Integer.toString(body.length));
 		response200Header();
 		responseBody(body);
 	}
