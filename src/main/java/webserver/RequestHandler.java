@@ -35,75 +35,14 @@ public class RequestHandler extends Thread {
         	HttpResponse res = new HttpResponse(out);
         	String url = req.getUrl();
         	
-        	Map<String, Controller> controller = new HashMap();
-        	controller.put("/user/create", new CreateUserController());
-        	controller.put("/user/list", new ListUserController());
-        	controller.put("/user/login", new LoginController());
-        	
-        	Controller con = controller.get(req.getUrl());
-        	if (con == null) {
+        	Controller controller = ControllerMapping.getController(req.getUrl());
+        	if (controller == null) {
         		res.forward("./webapp/"+url);
         	} else {
-        		con.service(req, res);
-        	}
-
-        	if ("/user/create".equals(url)) {
-        		User user = new User(req.getParameter("userId"), req.getParameter("password"), req.getParameter("name"), req.getParameter("email"));
-        		DataBase.addUser(user);
-        		res.sendRedirect("/index.html");
-        	} else if ("/user/list".equals(url)) {
-        		if (isLoggined(req)) {
-        			StringBuilder body = new StringBuilder();
-        			Collection<User> users = DataBase.findAll();
-        			body.append("<table border='1'>");
-        			body.append("<tr><td>UserId</td><td>Password</td><td>Name</td><td>E-Mail</td></tr>");
-        			for (User user:users) {
-        				body.append("<tr>");
-        				body.append("<td>"+user.getUserId()+"</td>");
-        				body.append("<td>"+user.getPassword()+"</td>");
-        				body.append("<td>"+user.getName()+"</td>");
-        				body.append("<td>"+user.getEmail()+"</td>");
-        				body.append("</tr>");
-        			}
-        			body.append("</table>");
-        			res.forwardBody(body.toString());
-        		} else {
-        			res.sendRedirect("/index.html");
-        		}
-        	} else if ("/user/login".equals(url)) {
-        		if (loginCorrect(req)) {
-        			res.addHeader("Set-Cookie", "logined=true");
-        			res.sendRedirect("/index.html");
-        		} else {
-        			res.addHeader("Set-Cookie", "logined=false");
-        			res.sendRedirect("/user/login_failed.html");
-        		}
-        	} else { // .html;.css;.js 경우
-        		res.forward("./webapp/"+url);
-        	}        	
+        		controller.service(req, res);
+        	} 	
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
-
-    private boolean isLoggined(HttpRequest req) {
-    	String value = req.getHeader("Cookie");
-    	if (Strings.isNullOrEmpty(value)) {
-    		return false;
-    	}
-    	Map<String,String> cookie = util.HttpRequestUtils.parseCookies(value);
-    	String logginedOrNot = cookie.get("logined");
-    	if (!Strings.isNullOrEmpty(logginedOrNot) && Boolean.parseBoolean(logginedOrNot)) {
-    		return true;
-    	}
-    	return false;
-	}
-
-	private boolean loginCorrect(HttpRequest req) {
-    	User user = DataBase.findUserById(req.getParameter("userId"));
-    	if ((user != null) && user.getPassword().equals(req.getParameter("password"))) {
-    		return true;
-    	}
-    	return false;
-	}
 }
