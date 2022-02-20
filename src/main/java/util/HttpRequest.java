@@ -7,9 +7,12 @@ import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Strings;
 
 import webserver.RequestHandler;
 
@@ -19,8 +22,10 @@ public class HttpRequest {
 	private String method;
 	private String url;
 	private String httpVersion;
+	private HttpSession session;
 	private Map<String,String> headers;
 	private Map<String,String> params;
+	private Map<String,String> cookies;
 	
 	public HttpRequest(InputStream in) throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -39,6 +44,17 @@ public class HttpRequest {
     	while(!"".equals(line = reader.readLine())) {
     		HttpRequestUtils.Pair pair = HttpRequestUtils.parseHeader(line);
     		headers.put(pair.getKey(), pair.getValue());
+    	}
+    	
+    	if (!Strings.isNullOrEmpty(line = getHeader("Cookie"))) {
+    		this.cookies = HttpRequestUtils.parseCookies(line);
+    	}
+    	
+    	if (!Strings.isNullOrEmpty(line = this.cookies.get("JSESSIONID"))) {
+    		this.session = HttpSessions.getSession(line);
+    	} else {
+    		this.session = new HttpSession(line = UUID.randomUUID().toString()); 
+    		HttpSessions.registerSession(line, this.session);
     	}
     	
     	// 본문 읽기
@@ -64,5 +80,13 @@ public class HttpRequest {
 	
 	public String getParameter(String key) {
 		return this.params.get(key);
+	}
+
+	public HttpSession getSession() {
+		return this.session;
+	}
+
+	public String getCookie(String key) {
+		return cookies.get(key);
 	}
 }

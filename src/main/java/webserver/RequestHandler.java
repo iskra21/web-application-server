@@ -35,6 +35,10 @@ public class RequestHandler extends Thread {
         	HttpResponse res = new HttpResponse(out);
         	String url = req.getUrl();
         	
+        	if(Strings.isNullOrEmpty(req.getCookie("JSESSIONID"))) {
+        		res.addHeader("Set-Cookie", "JESSIONID="+req.getSession().getId());
+        	}
+        	
         	Controller controller = ControllerMapping.getController(req.getUrl());
         	if (controller == null) {
         		res.forward("./webapp/"+url);
