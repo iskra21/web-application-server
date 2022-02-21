@@ -48,13 +48,14 @@ public class HttpRequest {
     	
     	if (!Strings.isNullOrEmpty(line = getHeader("Cookie"))) {
     		this.cookies = HttpRequestUtils.parseCookies(line);
+    		log.debug("theres no cookie");
     	}
     	
-    	if (!Strings.isNullOrEmpty(line = this.cookies.get("JSESSIONID"))) {
-    		this.session = HttpSessions.getSession(line);
-    	} else {
+    	if (line == null || Strings.isNullOrEmpty(line = this.cookies.get("JSESSIONID")) ||
+    			(this.session = HttpSessions.getSession(line)) == null) {
     		this.session = new HttpSession(line = UUID.randomUUID().toString()); 
     		HttpSessions.registerSession(line, this.session);
+    		log.debug("session created!, {}, {}", line, this.session.toString());
     	}
     	
     	// 본문 읽기

@@ -16,6 +16,7 @@ import db.DataBase;
 import model.User;
 import util.HttpRequest;
 import util.HttpResponse;
+import util.HttpSession;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class.getName());
@@ -35,8 +36,10 @@ public class RequestHandler extends Thread {
         	HttpResponse res = new HttpResponse(out);
         	String url = req.getUrl();
         	
-        	if(Strings.isNullOrEmpty(req.getCookie("JSESSIONID"))) {
-        		res.addHeader("Set-Cookie", "JESSIONID="+req.getSession().getId());
+        	HttpSession session = req.getSession();
+        	if(session.isNew()) {
+        		log.debug("set Cookie");
+        		res.addHeader("Set-Cookie", "JESSIONID="+session.getId());
         	}
         	
         	Controller controller = ControllerMapping.getController(req.getUrl());
