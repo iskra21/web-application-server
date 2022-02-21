@@ -17,7 +17,7 @@ public class HttpSessions {
 		return session;
 	}
 
-	public static HttpSession registerSession(String id, HttpSession session) {
-		return sessions.put(id, session);
+	public static void remove(String id) {
+		sessions.remove(id);
 	}
 }

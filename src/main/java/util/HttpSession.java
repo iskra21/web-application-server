@@ -21,4 +21,16 @@ public class HttpSession {
 	public String getId() {
 		return this.id;
 	}
+	
+	public void setAttribute(String name, Object obj) {
+		attributes.put(name, obj);
+	}
+	
+	public Object getAttribute(String name) {
+		return attributes.get(name);
+	}
+	
+	public void invalidate() {
+		HttpSessions.remove(this.id);
+	}
 }

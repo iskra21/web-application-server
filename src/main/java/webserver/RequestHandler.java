@@ -37,9 +37,7 @@ public class RequestHandler extends Thread {
         	HttpResponse res = new HttpResponse(out);
         	String url = req.getUrl();
         	
-        	//HttpSession session = req.getSession();
         	if(Strings.isNullOrEmpty(req.getCookie("JSESSIONID"))) {
-        		//log.debug("set Cookie");
         		res.addHeader("Set-Cookie", "JSESSIONID="+UUID.randomUUID());
         	}
         	
