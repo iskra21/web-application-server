@@ -22,7 +22,6 @@ public class HttpRequest {
 	private String method;
 	private String url;
 	private String httpVersion;
-	private HttpSession session;
 	private Map<String,String> headers;
 	private Map<String,String> params;
 	private Map<String,String> cookies;
@@ -46,17 +45,14 @@ public class HttpRequest {
     		headers.put(pair.getKey(), pair.getValue());
     	}
     	
-    	if (!Strings.isNullOrEmpty(line = getHeader("Cookie"))) {
-    		this.cookies = HttpRequestUtils.parseCookies(line);
-    		log.debug("theres no cookie");
-    	}
+    	this.cookies = HttpRequestUtils.parseCookies(headers.get("Cookie"));
     	
-    	if (line == null || Strings.isNullOrEmpty(line = this.cookies.get("JSESSIONID")) ||
+    	/* if (line == null || Strings.isNullOrEmpty(line = this.cookies.get("JSESSIONID")) ||
     			(this.session = HttpSessions.getSession(line)) == null) {
     		this.session = new HttpSession(line = UUID.randomUUID().toString()); 
     		HttpSessions.registerSession(line, this.session);
     		log.debug("session created!, {}, {}", line, this.session.toString());
-    	}
+    	} */
     	
     	// 본문 읽기
     	int index = url.indexOf('?');
@@ -84,7 +80,7 @@ public class HttpRequest {
 	}
 
 	public HttpSession getSession() {
-		return this.session;
+		return HttpSessions.getSession(cookies.get("JSESSIONID"));
 	}
 
 	public String getCookie(String key) {

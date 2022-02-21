@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,10 +37,10 @@ public class RequestHandler extends Thread {
         	HttpResponse res = new HttpResponse(out);
         	String url = req.getUrl();
         	
-        	HttpSession session = req.getSession();
-        	if(session.isNew()) {
-        		log.debug("set Cookie");
-        		res.addHeader("Set-Cookie", "JESSIONID="+session.getId());
+        	//HttpSession session = req.getSession();
+        	if(Strings.isNullOrEmpty(req.getCookie("JSESSIONID"))) {
+        		//log.debug("set Cookie");
+        		res.addHeader("Set-Cookie", "JSESSIONID="+UUID.randomUUID());
         	}
         	
         	Controller controller = ControllerMapping.getController(req.getUrl());
